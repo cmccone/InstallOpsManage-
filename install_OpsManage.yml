@@ -1,0 +1,173 @@
+---
+- name: config ssh
+  hosts: ansible
+  tasks:
+  - name: Generate SSH keys
+    shell: ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ""
+    args:
+      creates: /{{ ansible_ssh_user }}/.ssh/id_rsa
+    #delegate_to: localhost
+
+  - name: copy SSH Public keys
+    copy:
+      src: /root/.ssh/id_rsa.pub
+      dest: /root/.ssh/authorized_keys
+      mode: 0600
+      owner: root
+      group: root
+
+  - name: install ntp package
+    yum:
+      name: ntp
+      state: present
+
+  - name: set timezone
+    command: "timedatectl set-timezone Asia/Shanghai"
+
+  - name: update time
+    command: "ntpdate -u 0.centos.pool.ntp.org"
+
+  - name: enable ntpd service
+    service:
+      name: ntpd
+      state: restarted
+    
+- name: install and configure OpsManage
+  hosts: ops1
+  tasks:
+
+  - name: install ntp package
+    yum:
+      name: ntp
+      state: present
+
+  - name: set timezone
+    command: "timedatectl set-timezone Asia/Shanghai"
+
+  - name: update time
+    command: "ntpdate -u 0.centos.pool.ntp.org"
+
+  - name: enable ntpd service
+    service:
+      name: ntpd
+      state: restarted
+
+  - name: install vim
+    yum:
+      name: vim-enhanced
+      state: present
+
+  - name: copy SSH Public keys
+    copy:
+      src: /root/.ssh/id_rsa.pub
+      dest: /root/.ssh/authorized_keys
+      mode: 0700
+      owner: root
+      group: root
+
+  - name: enable epel repo
+    yum:
+      name: epel-release
+      state: present
+
+  - name: install require package
+    yum:
+      name: "wget,zlib,zlib-devel,readline-devel,sqlite-devel,bzip2-devel,openssl-devel,gdbm-devel,libdbi-devel,ncurses-libs,kernel-devel,libxslt-devel,libffi-devel,python-devel,zlib-devel,sshpass,gcc,git"
+      state: present
+
+  - name: install PIP
+    yum:
+      name: python2-pip
+      state: latest
+
+
+- name: install mysql database 
+  hosts: ops1
+  vars:
+    mariadb_bind_address: '0.0.0.0'
+    mariadb_root_password: 'root'
+    mariadb_databases:
+      - name: opsmanage
+        init_script: scripts/initdb.sql
+      - name: myotherdb
+    mariadb_users:
+      - name: opsmanage
+        password: 'opsmanage'
+        priv: "opsmanage.*:ALL,GRANT"
+        host: "localhost"
+      - name: hongsheng
+        password: 'hongsheng'
+        priv: "opsmanage.*:ALL"
+        append_privs: 'yes'
+    mariadb_custom_cnf:
+      mysqld:
+      general-log:
+      general-log-file: queries.log
+      log-output: file
+  roles:
+    - mariadb
+
+- name: install redis
+  hosts: ops1
+  tasks:
+
+    - name: download redis
+      command: "wget http://download.redis.io/releases/redis-3.2.8.tar.gz -O /opt/redis-3.2.8.tar.gz"
+
+    - name: untar redis package
+      shell: "cd /opt/;tar zxf  redis-3.2.8.tar.gz"
+
+    - name: make redis source
+      shell: "cd /opt/redis-3.2.8;make;make install PREFIX=/opt/redis"
+
+    - name: create redis conf
+      template:
+        src: "templates/redis.conf.tpl"
+        dest: "/opt/redis/redis.conf"
+
+    - name: start redis service
+      shell: "cd /opt/redis;bin/redis-server redis.conf"
+
+    - name: open 6379 port
+      firewalld:
+        port: 6379/tcp
+        permanent: true
+        state: enabled
+        immediate: true
+
+- name: OpsManage Configuration
+  hosts: ops1
+  tasks:
+    - name: clone source code
+      git:
+        repo: 'https://github.com/welliamcao/OpsManage.git'
+        dest: /opt/OpsManage
+        clone: yes
+        update: no
+
+    - name: prepare python env
+      shell: "cd /opt/OpsManage;pip  install -r requirements.txt"
+
+
+- name: config setting.py
+  hosts: ops1
+  tasks:
+
+    - name: settings.py
+      template:
+        src: "templates/settings.py.tpl"
+        dest: "/opt/OpsManage/OpsManage/settings.py"
+
+    - name: rsyncdb
+      script: scripts/update_ops_migrations.sh
+      ignore_errors: yes
+
+    - name: open 8000 port
+      firewalld:
+        port: 8000/tcp
+        permanent: true
+        immediate: true
+        state: enabled
+
+    - name: start OpsManage console
+      shell: "cd /opt/OpsManage;python manage.py runserver 0.0.0.0:8000 >/opt/OpsManage/run.log 2>&1 &"

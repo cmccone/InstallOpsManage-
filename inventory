@@ -1,0 +1,6 @@
+[ops1]
+192.168.164.146 ansible_ssh_user=root ansible_ssh_pass=xiaofei
+
+[ansible]
+192.168.164.143 ansible_ssh_user=root ansible_ssh_pass=xiaofei
+

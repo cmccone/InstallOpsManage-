@@ -1,0 +1,10 @@
+---
+- name: celery
+  hosts: ops1
+  tasks:
+
+  - name: supervisord.conf
+    template: 
+      src: templates/supervisord.conf.tpl
+      dest: /etc/supervisord.conf
+
