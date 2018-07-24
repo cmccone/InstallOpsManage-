@@ -1,12 +1,13 @@
-# InstallOpsManage-
-ansible script for install OpsManage 
+# InstallOpsManage
 
+安装配置Opsmange的ansbile脚本
 
 
 # OpsManage地址
 ```https://github.com/welliamcao/OpsManage```
 
-# Usage
+# 使用说明
+
 0. 在ansible登录需要管理的主机,便于生成SSH known_hosts
 
 1. 修改inventory内容,ops1组为OpsManage主机地址
@@ -25,3 +26,5 @@ ansible: 管理主机
 ```
 # ansible-playbook install_OpsManage.yml
 ```
+
+备注: 只做到官方文档的第十步,后续待补充
