@@ -57,10 +57,20 @@
       name: vim-enhanced
       state: present
 
+  - name: SSH key directory
+    file:
+      path: "{{ ansible_env.HOME }}/.ssh"
+      state: directory
+ 
+  - name: Generate SSH keys
+    shell: ssh-keygen -b 2048 -t rsa -f /root/.ssh/id_rsa -q -N ""
+    args:
+      creates: "{{ ansible_env.HOME }}/.ssh/id_rsa"
+
   - name: copy SSH Public keys
     copy:
       src: /root/.ssh/id_rsa.pub
-      dest: /root/.ssh/authorized_keys
+      dest: /{{ ansible_ssh_user }}/.ssh/authorized_keys
       mode: 0700
       owner: root
       group: root
@@ -169,5 +179,16 @@
         immediate: true
         state: enabled
 
-    - name: start OpsManage console
-      shell: "cd /opt/OpsManage;python manage.py runserver 0.0.0.0:8000 >/opt/OpsManage/run.log 2>&1 &"
+    - name: copy start script file
+      template:
+        src: templates/runOps.sh.tpl
+        dest: /opt/OpsManage/runOps.sh
+        mode: 0755
+        owner: "{{ ansible_ssh_user }}"
+
+    - name: start script
+      shell: "(/opt/OpsManage/runOps.sh > /dev/null 2>&1 &)"
+      executable: /bin/bash
+      async: 10
+      poll: 0
+       
