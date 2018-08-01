@@ -27,6 +27,4 @@ ansible: 管理主机
 # ansible-playbook install_OpsManage.yml
 ```
 
-备注:
-  1. 只做到官方文档的第十步,后续待补充
-  2. 适配centos 7
+备注: 适配centos 7
