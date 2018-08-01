@@ -151,20 +151,22 @@ serverurl=unix:///tmp/supervisor.sock ; use a unix:// URL  for a unix socket
 
 ;[include]
 ;files = relative/directory/*.ini
+
 [program:celery-worker-default]
 command=/usr/bin/python manage.py celery worker --loglevel=info -E -Q default
-directory=/mnt/OpsManage
-stdout_logfile=/var/log/celery-worker-default.log
+directory=/opt/OpsManage
+stdout_logfile=/var/log/ops-celery-worker-default.log
 autostart=true
 autorestart=true
 redirect_stderr=true
 stopsignal=QUIT
 numprocs=1
 
+
 [program:celery-worker-ansible]
 command=/usr/bin/python manage.py celery worker --loglevel=info -E -Q ansible
-directory=/mnt/OpsManage
-stdout_logfile=/var/log/celery-worker-ansible.log
+directory=/opt/OpsManage
+stdout_logfile=/var/log/ops-celery-worker-ansible.log
 autostart=true
 autorestart=true
 redirect_stderr=true
@@ -174,8 +176,8 @@ numprocs=1
 
 [program:celery-beat]
 command=/usr/bin/python manage.py celery beat
-directory=/mnt/OpsManage
-stdout_logfile=/var/log/celery-beat.log
+directory=/opt/OpsManage
+stdout_logfile=/var/log/ops-celery-beat.log
 autostart=true
 autorestart=true
 redirect_stderr=true
@@ -184,12 +186,10 @@ numprocs=1
 
 [program:celery-cam]
 command=/usr/bin/python manage.py celerycam
-directory=/mnt/OpsManage
-stdout_logfile=/var/log/celery-celerycam.log
+directory=/opt/OpsManage
+stdout_logfile=/var/log/ops-celery-celerycam.log
 autostart=true
 autorestart=true
 redirect_stderr=true
 stopsignal=QUIT
 numprocs=1
-
-

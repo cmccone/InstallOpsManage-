@@ -99,7 +99,9 @@
     mariadb_databases:
       - name: opsmanage
         init_script: scripts/initdb.sql
-      - name: myotherdb
+        encoding: "utf8"
+        character_set_database: "utf8"
+     
     mariadb_users:
       - name: opsmanage
         password: 'opsmanage'
@@ -114,6 +116,7 @@
       general-log:
       general-log-file: queries.log
       log-output: file
+      character_set_server: utf8
   roles:
     - mariadb
 
@@ -192,3 +195,10 @@
       async: 10
       poll: 0
        
+    - name: supervisord.conf
+      template:
+        src: templates/supervisord.conf.tpl
+        dest: /etc/supervisord.conf
+
+    - name: start supervisor
+      command: "/bin/supervisord -c /etc/supervisord.conf"
